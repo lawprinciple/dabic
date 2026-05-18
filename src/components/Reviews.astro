@@ -166,20 +166,21 @@ const reviews = prospect.reviews;
   }
 
   .reviews__stage {
-    position: relative;
-    min-height: clamp(240px, 36vw, 380px);
     max-width: 1040px;
     margin: 0 auto;
   }
 
+  /* Grid stacking — all reviews share one cell, the cell auto-sizes to
+     the tallest review so long quotes never overflow into the controls. */
   .reviews__list {
     list-style: none;
-    position: relative;
+    display: grid;
+    grid-template-areas: 'stack';
   }
 
   .review {
-    position: absolute;
-    inset: 0;
+    grid-area: stack;
+    align-self: center;
     display: flex;
     flex-direction: column;
     align-items: center;
