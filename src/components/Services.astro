@@ -18,8 +18,8 @@ const services = [
     title: 'Estetska stomatologija',
     desc: 'Beljenje, fasete i smile design za prirodan i siguran osmeh.',
     long: 'Beljenje zuba savremenim sistemima, kompozitne i keramičke fasete, smile design uz digitalnu simulaciju rezultata pre samog zahvata. Pristup je individualan — svako lice traži drugačiji osmeh.',
-    image: '/images/smile.jpg',
-    alt: 'Prirodan osmeh nakon estetske rehabilitacije',
+    image: '/images/service-2.jpg',
+    alt: 'Osmeh uokviren rukama u obliku srca — simbol estetske stomatologije',
     facts: [
       { k: 'Trajanje', v: 'Beljenje 60 min · Fasete 2–3 termina' },
       { k: 'Tehnologija', v: 'Digitalna simulacija pre zahvata' },
@@ -31,7 +31,7 @@ const services = [
     title: 'Konzervativna stomatologija',
     desc: 'Kompozitne plombe i zaštita zuba savremenim materijalima.',
     long: 'Estetske kompozitne plombe u boji zuba, lečenje karijesa minimalno invazivnim metodama i restauracija oštećenih zuba. Materijali štite preostalo zubno tkivo i traju dugo.',
-    image: '/images/service-6.jpg',
+    image: '/images/service-3.jpg',
     alt: 'Anatomski model zuba na mermernoj površini — simbol očuvanja zubnog tkiva',
     facts: [
       { k: 'Materijali', v: 'Nano-hibridni kompoziti, Ivoclar' },
@@ -44,7 +44,7 @@ const services = [
     title: 'Protetika',
     desc: 'Krunice, mostovi i navlake izrađeni u našoj laboratoriji.',
     long: 'Izrada fiksne i mobilne protetike — krunice, mostovi, fasete, totalne i parcijalne proteze. Tip rešenja biramo zajedno, na osnovu Vaše situacije, anatomije i očekivanja.',
-    image: '/images/service-5.jpg',
+    image: '/images/service-4.jpg',
     alt: 'Keramičke krunice i most — komponenti fiksne protetike',
     facts: [
       { k: 'Tehnologija', v: 'CAD/CAM digitalna izrada · cirkonijum-oksid' },
@@ -57,7 +57,7 @@ const services = [
     title: 'Endodoncija',
     desc: 'Lečenje kanala uz mikroskop i digitalni rendgen.',
     long: 'Lečenje upale ili odumiranja zubnog nerva. Koristimo mikroskop za precizan pristup kanalima, digitalni rendgen za dijagnostiku i savremene rotirajuće instrumente. Cilj je da se zub sačuva.',
-    image: '/images/service-3.jpg',
+    image: '/images/service-5.jpg',
     alt: 'Anatomski presek zuba — pulpa i korenski kanali',
     facts: [
       { k: 'Trajanje', v: '1–2 termina, u zavisnosti od složenosti' },
@@ -70,7 +70,7 @@ const services = [
     title: 'Profesionalno čišćenje',
     desc: 'Uklanjanje kamenca i poliranje, preporučeno dva puta godišnje.',
     long: 'Ultrazvučno uklanjanje zubnog kamenca i mekih naslaga, peskiranje (Air-Flow) za pigmente od kafe, čaja i duvana, i poliranje za glatku površinu. Završava se aplikacijom fluora.',
-    image: '/images/service-4.jpg',
+    image: '/images/service-6.jpg',
     alt: 'Osveženje zuba kapljicom vode — simbol profesionalnog čišćenja',
     facts: [
       { k: 'Trajanje', v: '45–60 minuta' },
@@ -200,7 +200,7 @@ const services = [
     border-radius: 50% 50% 14px 14px;
   }
   .service:nth-child(2) .service__media {
-    border-radius: 9999px;
+    border-radius: 14px 14px 50% 50%;
   }
   .service:nth-child(3) .service__media {
     border-radius: 14px 70% 14px 70%;
@@ -209,7 +209,10 @@ const services = [
     border-radius: 70% 14px 70% 14px;
   }
   .service:nth-child(5) .service__media {
-    border-radius: 50%;
+    /* Tooth-silhouette suggestion — wider rounded crown at top,
+       tapered toward the roots at the bottom. Asymmetric elliptical
+       corners (horizontal / vertical) give the organic shape. */
+    border-radius: 50% 50% 40% 40% / 35% 35% 65% 65%;
   }
   .service:nth-child(6) .service__media {
     border-radius: 50% 50% 50% 14px;

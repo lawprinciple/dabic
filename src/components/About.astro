@@ -6,6 +6,15 @@ const currentYear = new Date().getFullYear();
 ---
 
 <section class="about section" id="o-nama" aria-labelledby="o-nama-naslov">
+  <img
+    class="about__tooth"
+    src="/images/floating-tooth.png"
+    alt=""
+    aria-hidden="true"
+    data-tooth
+    loading="lazy"
+    decoding="async"
+  />
   <div class="container">
     <div class="about__grid">
       <figure class="about__media" data-reveal>
@@ -65,15 +74,18 @@ const currentYear = new Date().getFullYear();
 </section>
 
 <script>
-  // Light parallax for the about image — subtle ken-burns-ish drift on scroll
+  // Scroll effects for the About section:
+  //   1. Subtle parallax on the doctor portrait (existing)
+  //   2. Floating tooth — translateY + rotate tied to section scroll progress
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!reducedMotion) {
     const targets = document.querySelectorAll<HTMLElement>('[data-parallax]');
-    let lastY = window.scrollY;
+    const tooth = document.querySelector<HTMLElement>('[data-tooth]');
+    const aboutSection = tooth?.closest('section') ?? null;
     let raf = 0;
 
     function update() {
-      const y = window.scrollY;
+      // Parallax targets
       targets.forEach((el) => {
         const r = el.getBoundingClientRect();
         if (r.bottom < 0 || r.top > window.innerHeight) return;
@@ -81,13 +93,34 @@ const currentYear = new Date().getFullYear();
         const center = r.top + r.height / 2 - window.innerHeight / 2;
         el.style.setProperty('--py', `${-center * strength}px`);
       });
+
+      // Floating tooth — progress hits 1 when the section center aligns
+      // with the viewport center (so the tooth has exited by the time
+      // the user is mid-reading). Ease-in (pow 1.5) so the exit accelerates.
+      // Travel calculated in pixels from actual section + tooth heights
+      // so the tooth definitively exits regardless of section size.
+      // Always runs (no visibility skip) so it can't get stuck on fast scroll.
+      if (tooth && aboutSection) {
+        const r = aboutSection.getBoundingClientRect();
+        // Full scroll distance (vs half before) — tooth travels at half
+        // the previous speed. Linear progression, no easing burst.
+        const total = window.innerHeight + r.height;
+        const traveled = window.innerHeight - r.top;
+        const progress = Math.max(0, Math.min(1, traveled / total));
+        const toothH = tooth.offsetHeight || 300;
+        const startY = -toothH - 20;       // fully above the section
+        const endY = r.height + 20;        // fully below the section
+        const y = startY + progress * (endY - startY);
+        tooth.style.setProperty('--tooth-y', `${y}px`);
+        tooth.style.setProperty('--tooth-r', `${-15 + progress * 30}deg`);
+      }
+
       raf = 0;
     }
 
     function onScroll() {
       if (raf) return;
       raf = requestAnimationFrame(update);
-      lastY = window.scrollY;
     }
 
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -101,19 +134,43 @@ const currentYear = new Date().getFullYear();
     color: var(--ink);
   }
 
+  /* Floating tooth — drifts top → bottom + slight rotate as you scroll
+     through the About section. Heavy blur + low opacity so it reads as
+     atmospheric depth, not a literal tooth banner. */
+  .about__tooth {
+    position: absolute;
+    top: 0;
+    right: clamp(20px, 6vw, 80px);
+    width: clamp(180px, 28vw, 360px);
+    height: auto;
+    z-index: 0;
+    pointer-events: none;
+    filter: blur(2px);
+    opacity: 0.22;
+    transform: translateY(var(--tooth-y, -20%)) rotate(var(--tooth-r, -15deg));
+    will-change: transform;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .about__tooth {
+      display: none;
+    }
+  }
+
   .about__grid {
     display: grid;
     grid-template-columns: 5fr 6fr;
     gap: clamp(48px, 7vw, 120px);
     align-items: start;
+    position: relative;
+    z-index: 1;
   }
 
   .about__media {
     position: relative;
     aspect-ratio: 4 / 5;
     overflow: hidden;
-    border-radius: 2px;
-    background: var(--bg-deep);
+    border-radius: clamp(28px, 3.2vw, 48px);
     box-shadow: 0 30px 60px -30px rgba(15, 28, 42, 0.35);
   }
 
