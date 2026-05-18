@@ -1,0 +1,201 @@
+---
+import { prospect } from '../prospect';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__lockup" data-reveal>
+      <p class="footer__eyebrow eyebrow">— Stomatološka ordinacija</p>
+      <p class="footer__big serif">
+        {prospect.clinicShort}<span class="serif--italic">.</span>
+      </p>
+    </div>
+
+    <div class="footer__grid">
+      <div class="footer__col">
+        <p class="footer__key">Adresa</p>
+        <p class="footer__val">
+          {prospect.address.street}<br />
+          {prospect.address.district}, {prospect.address.city}
+        </p>
+      </div>
+
+      <div class="footer__col">
+        <p class="footer__key">Telefon</p>
+        <a class="footer__phone" href={`tel:${prospect.phone.tel}`}>{prospect.phone.display}</a>
+      </div>
+
+      <div class="footer__col">
+        <p class="footer__key">Radno vreme</p>
+        <p class="footer__val">
+          {prospect.hours.weekdaysFooter}<br />
+          <span class="footer__muted">{prospect.hours.weekendNoteShort}</span>
+        </p>
+      </div>
+
+      <div class="footer__col footer__col--right">
+        <p class="footer__key">Pratite</p>
+        <a class="footer__link" href="#vrh" data-back-to-top>
+          Na vrh <span>↑</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="footer__base">
+      <p class="footer__disclaimer">
+        Sve informacije na ovom sajtu su informativnog karaktera i ne zamenjuju savet stomatologa.
+      </p>
+      <p class="footer__copy">© {year} · {prospect.clinic}</p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    background: var(--ink);
+    color: var(--on-deep);
+    padding: clamp(64px, 9vw, 120px) 0 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .footer::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: rgba(241, 235, 221, 0.10);
+  }
+
+  .footer__lockup {
+    text-align: left;
+    margin-bottom: clamp(48px, 7vw, 96px);
+  }
+
+  .footer__eyebrow {
+    color: rgba(241, 235, 221, 0.6);
+    margin-bottom: 20px;
+  }
+
+  .footer__big {
+    font-size: clamp(80px, 22vw, 280px);
+    font-weight: 350;
+    line-height: 0.85;
+    letter-spacing: -0.04em;
+    color: var(--on-deep);
+    margin: 0;
+  }
+
+  .footer__big .serif--italic {
+    color: var(--accent);
+  }
+
+  .footer__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 40px;
+    padding: 48px 0;
+    border-top: 1px solid rgba(241, 235, 221, 0.12);
+    border-bottom: 1px solid rgba(241, 235, 221, 0.12);
+  }
+
+  .footer__col--right {
+    text-align: right;
+  }
+
+  .footer__key {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(241, 235, 221, 0.5);
+    margin-bottom: 14px;
+  }
+
+  .footer__val {
+    font-size: 15px;
+    line-height: 1.55;
+    color: rgba(241, 235, 221, 0.95);
+  }
+
+  .footer__muted {
+    color: rgba(241, 235, 221, 0.5);
+    font-size: 13px;
+  }
+
+  .footer__phone {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 22px;
+    color: var(--on-deep);
+    transition: color 0.3s var(--ease);
+    font-variation-settings: 'opsz' 36, 'slnt' -10;
+  }
+
+  .footer__phone:hover { color: var(--accent); }
+
+  .footer__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--on-deep);
+    padding: 8px 0;
+    transition: color 0.3s var(--ease);
+  }
+
+  .footer__link:hover { color: var(--accent); }
+
+  .footer__link span {
+    display: inline-block;
+    transition: transform 0.4s var(--ease);
+  }
+
+  .footer__link:hover span { transform: translateY(-4px); }
+
+  .footer__base {
+    margin-top: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  .footer__disclaimer {
+    font-size: 12px;
+    color: rgba(241, 235, 221, 0.45);
+    max-width: 60ch;
+    line-height: 1.6;
+  }
+
+  .footer__copy {
+    font-size: 12px;
+    color: rgba(241, 235, 221, 0.55);
+    letter-spacing: 0.04em;
+  }
+
+  @media (max-width: 720px) {
+    .footer__grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 32px 24px;
+    }
+    .footer__col--right {
+      text-align: left;
+      grid-column: 1 / -1;
+    }
+    .footer__base {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+  }
+</style>

@@ -1,0 +1,324 @@
+---
+const services = [
+  {
+    n: '01',
+    title: 'Implantologija',
+    desc: 'Trajno rešenje za nedostajuće zube, planirano u Vašem ritmu.',
+    long: 'Postavljanje titanijumskih implantata kao trajna zamena za izgubljene zube. Procedura uključuje 3D planiranje, hirurško postavljanje implantata i izradu krunice. Implantati izgledaju i funkcionišu kao prirodni zubi, a uz adekvatnu negu mogu trajati doživotno.',
+    image: '/images/service-1.jpg',
+    alt: 'Titanijumski dentalni implantat sa keramičkom krunicom',
+    facts: [
+      { k: 'Trajanje', v: '1 termin za postavljanje · 3–6 meseci za ugradnju' },
+      { k: 'Materijali', v: 'Implantati vodećih proizvođača (Straumann, Nobel Biocare)' },
+      { k: 'Anestezija', v: 'Lokalna — zahvat je bezbolan' },
+    ],
+  },
+  {
+    n: '02',
+    title: 'Estetska stomatologija',
+    desc: 'Beljenje, fasete i smile design za prirodan i siguran osmeh.',
+    long: 'Beljenje zuba savremenim sistemima, kompozitne i keramičke fasete, smile design uz digitalnu simulaciju rezultata pre samog zahvata. Pristup je individualan — svako lice traži drugačiji osmeh.',
+    image: '/images/smile.jpg',
+    alt: 'Prirodan osmeh nakon estetske rehabilitacije',
+    facts: [
+      { k: 'Trajanje', v: 'Beljenje 60 min · Fasete 2–3 termina' },
+      { k: 'Tehnologija', v: 'Digitalna simulacija pre zahvata' },
+      { k: 'Garancija', v: 'Stabilnost rezultata uz redovne kontrole' },
+    ],
+  },
+  {
+    n: '03',
+    title: 'Konzervativna stomatologija',
+    desc: 'Kompozitne plombe i zaštita zuba savremenim materijalima.',
+    long: 'Estetske kompozitne plombe u boji zuba, lečenje karijesa minimalno invazivnim metodama i restauracija oštećenih zuba. Materijali štite preostalo zubno tkivo i traju dugo.',
+    image: '/images/service-6.jpg',
+    alt: 'Anatomski model zuba na mermernoj površini — simbol očuvanja zubnog tkiva',
+    facts: [
+      { k: 'Materijali', v: 'Nano-hibridni kompoziti, Ivoclar' },
+      { k: 'Pristup', v: 'Minimalno invazivno — čuva zdravo tkivo' },
+      { k: 'Anestezija', v: 'Lokalna, po potrebi' },
+    ],
+  },
+  {
+    n: '04',
+    title: 'Protetika',
+    desc: 'Krunice, mostovi i navlake izrađeni u našoj laboratoriji.',
+    long: 'Izrada fiksne i mobilne protetike — krunice, mostovi, fasete, totalne i parcijalne proteze. Tip rešenja biramo zajedno, na osnovu Vaše situacije, anatomije i očekivanja.',
+    image: '/images/service-5.jpg',
+    alt: 'Keramičke krunice i most — komponenti fiksne protetike',
+    facts: [
+      { k: 'Tehnologija', v: 'CAD/CAM digitalna izrada · cirkonijum-oksid' },
+      { k: 'Laboratorija', v: 'Saradnja sa zubotehničarom u istoj zgradi' },
+      { k: 'Trajanje', v: '2–3 termina, u zavisnosti od složenosti' },
+    ],
+  },
+  {
+    n: '05',
+    title: 'Endodoncija',
+    desc: 'Lečenje kanala uz mikroskop i digitalni rendgen.',
+    long: 'Lečenje upale ili odumiranja zubnog nerva. Koristimo mikroskop za precizan pristup kanalima, digitalni rendgen za dijagnostiku i savremene rotirajuće instrumente. Cilj je da se zub sačuva.',
+    image: '/images/service-3.jpg',
+    alt: 'Anatomski presek zuba — pulpa i korenski kanali',
+    facts: [
+      { k: 'Trajanje', v: '1–2 termina, u zavisnosti od složenosti' },
+      { k: 'Tehnologija', v: 'Operativni mikroskop · digitalni rendgen' },
+      { k: 'Anestezija', v: 'Lokalna — zahvat je bezbolan' },
+    ],
+  },
+  {
+    n: '06',
+    title: 'Profesionalno čišćenje',
+    desc: 'Uklanjanje kamenca i poliranje, preporučeno dva puta godišnje.',
+    long: 'Ultrazvučno uklanjanje zubnog kamenca i mekih naslaga, peskiranje (Air-Flow) za pigmente od kafe, čaja i duvana, i poliranje za glatku površinu. Završava se aplikacijom fluora.',
+    image: '/images/service-4.jpg',
+    alt: 'Osveženje zuba kapljicom vode — simbol profesionalnog čišćenja',
+    facts: [
+      { k: 'Trajanje', v: '45–60 minuta' },
+      { k: 'Preporuka', v: 'Kontrolni pregled svakih 6 meseci' },
+      { k: 'Komfor', v: 'Bez bola, bez anestezije' },
+    ],
+  },
+];
+---
+
+<section class="services section" id="usluge" aria-labelledby="usluge-naslov">
+  <div class="container">
+    <header class="services__header">
+      <p class="eyebrow" data-reveal>— Usluge</p>
+      <h2 id="usluge-naslov" class="services__title serif" data-reveal>
+        Šta radimo<br /><span class="serif--italic">za Vaš osmeh.</span>
+      </h2>
+      <p class="services__lede" data-reveal>
+        Kompletna stomatološka njega na jednom mestu, sa savremenom tehnologijom i materijalima vodećih svetskih proizvođača.
+      </p>
+    </header>
+
+    <ol class="services__list">
+      {services.map((s) => (
+        <li class="service" data-reveal>
+          <figure class="service__media">
+            <img src={s.image} alt={s.alt} loading="lazy" decoding="async" />
+          </figure>
+
+          <div class="service__content">
+            <span class="service__n serif serif--italic" aria-hidden="true">{s.n}</span>
+            <h3 class="service__title serif">{s.title}</h3>
+            <p class="service__desc serif serif--italic">{s.desc}</p>
+            <p class="service__long">{s.long}</p>
+            <dl class="service__facts">
+              {s.facts.map((f) => (
+                <div class="service-fact">
+                  <dt>{f.k}</dt>
+                  <dd>{f.v}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .services {
+    background: var(--bg-cream);
+    color: var(--ink);
+  }
+
+  .services__header {
+    max-width: 880px;
+    margin: 0 auto clamp(72px, 9vw, 128px);
+    text-align: left;
+  }
+
+  .services__header .eyebrow {
+    color: var(--ink-2);
+    margin-bottom: 32px;
+  }
+
+  .services__title {
+    font-size: var(--t-display);
+    font-weight: 350;
+    line-height: 1.04;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    margin-bottom: 28px;
+    max-width: 16ch;
+  }
+
+  .services__lede {
+    font-size: var(--t-body-lg);
+    line-height: 1.5;
+    color: var(--ink-2);
+    max-width: 56ch;
+  }
+
+  /* List */
+  .services__list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(96px, 12vw, 168px);
+    counter-reset: service;
+  }
+
+  .service {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(48px, 7vw, 112px);
+    align-items: center;
+  }
+
+  /* Alternate sides — even rows put image on the right */
+  .service:nth-child(even) .service__media { grid-column: 2; grid-row: 1; }
+  .service:nth-child(even) .service__content { grid-column: 1; grid-row: 1; }
+
+  /* Media */
+  .service__media {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: var(--bg-cream);
+    margin: 0;
+    transition: border-radius 0.6s var(--ease);
+  }
+
+  .service__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    filter: saturate(0.94) contrast(1.02);
+  }
+
+  /* Varied silhouettes per row — same visual family (generous asymmetric
+     curves), each service gets its own shape. Percentages scale with the
+     image size so the shapes hold across breakpoints. */
+  .service:nth-child(1) .service__media {
+    border-radius: 50% 50% 14px 14px;
+  }
+  .service:nth-child(2) .service__media {
+    border-radius: 9999px;
+  }
+  .service:nth-child(3) .service__media {
+    border-radius: 14px 70% 14px 70%;
+  }
+  .service:nth-child(4) .service__media {
+    border-radius: 70% 14px 70% 14px;
+  }
+  .service:nth-child(5) .service__media {
+    border-radius: 50%;
+  }
+  .service:nth-child(6) .service__media {
+    border-radius: 50% 50% 50% 14px;
+  }
+
+  /* Content */
+  .service__content {
+    display: flex;
+    flex-direction: column;
+    max-width: 52ch;
+  }
+
+  .service__n {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--ink-3);
+    letter-spacing: 0.04em;
+    line-height: 1;
+    margin-bottom: 24px;
+  }
+
+  .service__title {
+    font-size: clamp(32px, 3.6vw, 52px);
+    font-weight: 400;
+    color: var(--ink);
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    margin-bottom: 20px;
+  }
+
+  .service__desc {
+    font-size: clamp(18px, 1.5vw, 22px);
+    font-weight: 350;
+    line-height: 1.35;
+    color: var(--ink-2);
+    margin-bottom: 28px;
+    max-width: 36ch;
+  }
+
+  .service__desc.serif--italic {
+    color: var(--accent);
+  }
+
+  .service__long {
+    font-size: var(--t-body-lg);
+    line-height: 1.6;
+    color: var(--ink-2);
+    margin-bottom: 36px;
+  }
+
+  /* Facts spec table */
+  .service__facts {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-top: 1px solid var(--ink-line);
+  }
+
+  .service-fact {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 20px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--ink-line);
+    align-items: baseline;
+  }
+
+  .service-fact dt {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .service-fact dd {
+    font-size: 14px;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+
+  /* Tablet — keep alternation but reduce gap */
+  @media (max-width: 1080px) {
+    .service {
+      gap: clamp(32px, 5vw, 64px);
+    }
+  }
+
+  /* Mobile — image on top, content below; no alternation */
+  @media (max-width: 720px) {
+    .services__list {
+      gap: clamp(64px, 14vw, 96px);
+    }
+    .service,
+    .service:nth-child(even) {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+    .service:nth-child(even) .service__media,
+    .service:nth-child(even) .service__content {
+      grid-column: 1;
+      grid-row: auto;
+    }
+    .service__media {
+      aspect-ratio: 4 / 3;
+    }
+    .service-fact {
+      grid-template-columns: 90px 1fr;
+      gap: 14px;
+    }
+  }
+</style>

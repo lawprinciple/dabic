@@ -1,0 +1,308 @@
+---
+import { prospect } from '../prospect';
+
+const reviews = prospect.reviews;
+---
+
+<section class="reviews" id="utisci" aria-labelledby="utisci-naslov" data-reviews>
+  <div class="reviews__inner container">
+    <header class="reviews__header" data-reveal>
+      <p class="eyebrow">— Utisci pacijenata</p>
+      <h2 id="utisci-naslov" class="visually-hidden">Šta kažu naši pacijenti</h2>
+    </header>
+
+    <div class="reviews__stage">
+      <ol class="reviews__list" data-reviews-list>
+        {reviews.map((r, i) => (
+          <li
+            class={`review${i === 0 ? ' is-active' : ''}`}
+            data-review-index={i}
+            aria-hidden={i === 0 ? 'false' : 'true'}
+          >
+            <div class="review__stars" aria-label="Ocena 5 od 5">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <blockquote class="review__quote serif">
+              <span class="review__mark serif--italic" aria-hidden="true">"</span>{r.quote}<span class="review__mark review__mark--end serif--italic" aria-hidden="true">"</span>
+            </blockquote>
+            <p class="review__author">
+              <span class="review__name">{r.author}</span>
+              <span class="review__sep" aria-hidden="true">·</span>
+              <span class="review__when">{r.when}</span>
+            </p>
+          </li>
+        ))}
+      </ol>
+    </div>
+
+    <div class="reviews__controls" data-reveal>
+      <div class="reviews__count">
+        <span class="reviews__current serif serif--italic" data-reviews-current>01</span>
+        <span class="reviews__sep">/</span>
+        <span class="reviews__total">{String(reviews.length).padStart(2, '0')}</span>
+      </div>
+      <div class="reviews__nav">
+        <button class="reviews__btn" data-reviews-prev aria-label="Prethodni utisak">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.2">
+            <line x1="18" y1="11" x2="4" y2="11" />
+            <polyline points="10,5 4,11 10,17" />
+          </svg>
+        </button>
+        <button class="reviews__btn" data-reviews-next aria-label="Sledeći utisak">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.2">
+            <line x1="4" y1="11" x2="18" y2="11" />
+            <polyline points="12,5 18,11 12,17" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const root = document.querySelector<HTMLElement>('[data-reviews]');
+  if (root) {
+    const reviews = Array.from(root.querySelectorAll<HTMLElement>('.review'));
+    const currentEl = root.querySelector<HTMLElement>('[data-reviews-current]')!;
+    const prevBtn = root.querySelector<HTMLButtonElement>('[data-reviews-prev]')!;
+    const nextBtn = root.querySelector<HTMLButtonElement>('[data-reviews-next]')!;
+
+    let idx = 0;
+    let autoTimer: number | null = null;
+    let resumeTimer: number | null = null;
+    const AUTO_MS = 6000;
+    const RESUME_MS = 12000;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function paint() {
+      reviews.forEach((el, i) => {
+        const active = i === idx;
+        el.classList.toggle('is-active', active);
+        el.setAttribute('aria-hidden', active ? 'false' : 'true');
+      });
+      currentEl.textContent = String(idx + 1).padStart(2, '0');
+    }
+
+    function go(to: number) {
+      idx = (to + reviews.length) % reviews.length;
+      paint();
+    }
+
+    function start() {
+      if (reduced) return;
+      stop();
+      autoTimer = window.setInterval(() => go(idx + 1), AUTO_MS);
+    }
+
+    function stop() {
+      if (autoTimer) { window.clearInterval(autoTimer); autoTimer = null; }
+    }
+
+    function pauseThenResume() {
+      stop();
+      if (resumeTimer) window.clearTimeout(resumeTimer);
+      resumeTimer = window.setTimeout(start, RESUME_MS);
+    }
+
+    nextBtn.addEventListener('click', () => { go(idx + 1); pauseThenResume(); });
+    prevBtn.addEventListener('click', () => { go(idx - 1); pauseThenResume(); });
+
+    root.addEventListener('mouseenter', stop);
+    root.addEventListener('mouseleave', start);
+
+    // Start when section in view
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) start();
+          else stop();
+        });
+      }, { threshold: 0.4 });
+      io.observe(root);
+    } else {
+      start();
+    }
+  }
+</script>
+
+<style>
+  .reviews {
+    background: var(--bg-deep);
+    color: var(--on-deep);
+    padding: clamp(96px, 14vw, 180px) 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .reviews::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(60% 50% at 80% 20%, rgba(43, 90, 140, 0.32), transparent 60%),
+      radial-gradient(50% 40% at 10% 90%, rgba(200, 160, 70, 0.10), transparent 60%);
+    pointer-events: none;
+  }
+
+  .reviews__inner {
+    position: relative;
+    text-align: center;
+  }
+
+  .reviews__header {
+    margin-bottom: clamp(48px, 7vw, 96px);
+  }
+
+  .reviews__header .eyebrow {
+    color: rgba(241, 235, 221, 0.6);
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0);
+    white-space: nowrap; border: 0;
+  }
+
+  .reviews__stage {
+    position: relative;
+    min-height: clamp(240px, 36vw, 380px);
+    max-width: 1040px;
+    margin: 0 auto;
+  }
+
+  .reviews__list {
+    list-style: none;
+    position: relative;
+  }
+
+  .review {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
+    pointer-events: none;
+  }
+
+  .review.is-active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+    transition-delay: 0.1s;
+  }
+
+  .review__stars {
+    display: inline-flex;
+    gap: 6px;
+  }
+
+  .review__stars span {
+    width: 16px;
+    height: 16px;
+    background: var(--gold);
+    -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><polygon points='12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26'/></svg>") center / contain no-repeat;
+            mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><polygon points='12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26'/></svg>") center / contain no-repeat;
+  }
+
+  .review__quote {
+    font-size: clamp(26px, 3.4vw, 52px);
+    font-weight: 350;
+    line-height: 1.18;
+    letter-spacing: -0.02em;
+    color: var(--on-deep);
+    max-width: 22ch;
+    position: relative;
+    font-variation-settings: 'opsz' 144, 'SOFT' 30;
+  }
+
+  .review__mark {
+    color: var(--accent);
+    font-size: 1.4em;
+    line-height: 0;
+    margin-right: 0.1em;
+  }
+
+  .review__mark--end {
+    margin-left: 0.05em;
+    margin-right: 0;
+  }
+
+  .review__author {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(241, 235, 221, 0.7);
+  }
+
+  .review__sep {
+    color: rgba(241, 235, 221, 0.4);
+  }
+
+  .reviews__controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    margin-top: clamp(48px, 6vw, 80px);
+  }
+
+  .reviews__count {
+    font-size: 18px;
+    color: rgba(241, 235, 221, 0.7);
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  .reviews__current {
+    font-size: 28px;
+    color: var(--on-deep);
+    font-variation-settings: 'opsz' 144, 'SOFT' 30, 'slnt' -10;
+  }
+
+  .reviews__sep {
+    color: rgba(241, 235, 221, 0.35);
+  }
+
+  .reviews__total {
+    color: rgba(241, 235, 221, 0.5);
+  }
+
+  .reviews__nav {
+    display: inline-flex;
+    gap: 8px;
+  }
+
+  .reviews__btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1px solid rgba(241, 235, 221, 0.25);
+    color: var(--on-deep);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s var(--ease), border-color 0.3s var(--ease), transform 0.3s var(--ease);
+  }
+
+  .reviews__btn:hover {
+    background: rgba(241, 235, 221, 0.08);
+    border-color: rgba(241, 235, 221, 0.55);
+    transform: scale(1.05);
+  }
+
+  @media (max-width: 720px) {
+    .review__quote { max-width: 100%; }
+    .reviews__controls { gap: 24px; }
+  }
+</style>

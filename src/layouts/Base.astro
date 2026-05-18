@@ -1,0 +1,247 @@
+---
+import '../styles/global.css';
+import { prospect } from '../prospect';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = prospect.pageTitle,
+  description = prospect.pageDescription,
+} = Astro.props;
+
+// Build absolute URLs and favicon letter from prospect config
+const absoluteOgImage = `${prospect.site.canonicalUrl.replace(/\/$/, '')}${prospect.ogImage}`;
+const faviconLetter = prospect.clinicShort.charAt(0).toUpperCase();
+const faviconSvg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%230F1C2A'/><text x='16' y='22' font-family='Georgia,serif' font-size='20' font-style='italic' fill='%23FAFAF7' text-anchor='middle'>${faviconLetter}</text></svg>`;
+---
+
+<!DOCTYPE html>
+<html lang="sr-Latn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0F1C2A" />
+  <meta name="description" content={description} />
+  <meta name="author" content={prospect.clinic} />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image" content={prospect.ogImage} />
+  <meta property="og:locale" content="sr_RS" />
+
+  <title>{title}</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="image" href="/images/smile.jpg" fetchpriority="high" />
+
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..700,0..100;1,9..144,300..700,0..100&family=Inter:wght@400;500;600&display=swap"
+  />
+
+  <link
+    rel="icon"
+    href={`data:image/svg+xml;utf8,${faviconSvg}`}
+  />
+
+  <script type="application/ld+json" is:inline set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": ["Dentist", "LocalBusiness"],
+        "@id": prospect.site.schemaId,
+        "name": prospect.clinic,
+        "alternateName": prospect.alternateName,
+        "image": absoluteOgImage,
+        "url": prospect.site.canonicalUrl,
+        "telephone": prospect.phone.tel,
+        "priceRange": "$$",
+        "description": prospect.pageDescription,
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": prospect.address.street,
+          "addressLocality": prospect.address.city,
+          "addressRegion": prospect.address.district,
+          "postalCode": prospect.address.postalCode,
+          "addressCountry": prospect.address.country
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": prospect.geo.lat,
+          "longitude": prospect.geo.lng
+        },
+        "openingHoursSpecification": [{
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": prospect.hours.daysOpen,
+          "opens": prospect.hours.opensAt,
+          "closes": prospect.hours.closesAt
+        }],
+        "founder": { "@id": prospect.site.doctorSchemaId },
+        "medicalSpecialty": ["Dentistry", "OralSurgery", "Orthodontics", "CosmeticDentistry"],
+        "areaServed": { "@type": "City", "name": prospect.address.city }
+      },
+      {
+        "@type": "Person",
+        "@id": prospect.site.doctorSchemaId,
+        "name": prospect.doctor.name,
+        "jobTitle": prospect.doctor.role,
+        "worksFor": { "@id": prospect.site.schemaId },
+        "alumniOf": {
+          "@type": "CollegeOrUniversity",
+          "name": prospect.doctor.school
+        }
+      }
+    ]
+  })}></script>
+
+  <!-- Add js class before CSS to avoid flash -->
+  <script is:inline>document.documentElement.classList.add('js');</script>
+</head>
+
+<body>
+  <!-- Scroll progress bar (fixed, top of viewport) -->
+  <div class="scroll-progress" aria-hidden="true"><span data-scroll-progress></span></div>
+
+  <slot />
+
+  <!-- Motion layer: smooth scroll + scroll reveals -->
+  <script>
+    import Lenis from 'lenis';
+    import { gsap } from 'gsap';
+    import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Smooth scroll
+    if (!reducedMotion) {
+      const lenis = new Lenis({
+        duration: 1.1,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smoothWheel: true,
+        wheelMultiplier: 1.0,
+        touchMultiplier: 1.5,
+      });
+
+      function raf(time: number) {
+        lenis.raf(time);
+        requestAnimationFrame(raf);
+      }
+      requestAnimationFrame(raf);
+
+      lenis.on('scroll', ScrollTrigger.update);
+      ScrollTrigger.scrollerProxy(document.body, {
+        scrollTop(value) {
+          if (arguments.length && value !== undefined) lenis.scrollTo(value, { immediate: true });
+          return window.scrollY;
+        },
+        getBoundingClientRect() {
+          return { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight };
+        },
+      });
+
+      // Anchor links — let Lenis handle them
+      document.querySelectorAll<HTMLAnchorElement>('a[href^="#"]').forEach((link) => {
+        link.addEventListener('click', (e) => {
+          const href = link.getAttribute('href');
+          if (!href || href === '#') return;
+          const target = document.querySelector(href);
+          if (!target) return;
+          e.preventDefault();
+          lenis.scrollTo(target as HTMLElement, { offset: 0, duration: 1.4 });
+        });
+      });
+    }
+
+    // Reveals — IntersectionObserver is more reliable than ScrollTrigger
+    // when scroll source can vary (Lenis vs. native vs. anchor jumps).
+    if ('IntersectionObserver' in window) {
+      const revealIO = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-in');
+            revealIO.unobserve(entry.target);
+          }
+        });
+      }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+
+      document.querySelectorAll<HTMLElement>('[data-reveal]').forEach((el) => revealIO.observe(el));
+
+      const maskIO = new IntersectionObserver((entries) => {
+        entries.forEach((entry, i) => {
+          if (entry.isIntersecting) {
+            const el = entry.target as HTMLElement;
+            const delay = parseInt(el.dataset.delay || '0', 10) || (i * 60);
+            window.setTimeout(() => el.classList.add('is-in'), delay);
+            maskIO.unobserve(entry.target);
+          }
+        });
+      }, { rootMargin: '0px 0px -5% 0px', threshold: 0.05 });
+
+      document.querySelectorAll<HTMLElement>('[data-reveal-mask]').forEach((el) => maskIO.observe(el));
+    } else {
+      document.querySelectorAll<HTMLElement>('[data-reveal], [data-reveal-mask]').forEach((el) => el.classList.add('is-in'));
+    }
+
+    // Safety net: reveal anything above-the-fold after a short delay.
+    window.setTimeout(() => {
+      document.querySelectorAll<HTMLElement>('[data-reveal]:not(.is-in), [data-reveal-mask]:not(.is-in)').forEach((el) => {
+        const r = el.getBoundingClientRect();
+        if (r.top < window.innerHeight && r.bottom > 0) el.classList.add('is-in');
+      });
+    }, 1200);
+
+    // Belt-and-suspenders: reveal any remaining hidden content after 4s no matter what
+    window.setTimeout(() => {
+      document.querySelectorAll<HTMLElement>('[data-reveal]:not(.is-in), [data-reveal-mask]:not(.is-in)').forEach((el) => {
+        const r = el.getBoundingClientRect();
+        if (r.top < window.innerHeight * 1.5) el.classList.add('is-in');
+      });
+    }, 4000);
+
+    // Scroll fallback — if IntersectionObserver doesn't fire (some test/preview
+    // environments), reveal elements as they come into view via scroll events.
+    let scrollRevealTimer = 0;
+    function scrollReveal() {
+      document.querySelectorAll<HTMLElement>('[data-reveal]:not(.is-in), [data-reveal-mask]:not(.is-in)').forEach((el) => {
+        const r = el.getBoundingClientRect();
+        if (r.top < window.innerHeight * 0.95 && r.bottom > 0) {
+          el.classList.add('is-in');
+        }
+      });
+    }
+    window.addEventListener('scroll', () => {
+      if (scrollRevealTimer) return;
+      scrollRevealTimer = window.setTimeout(() => {
+        scrollReveal();
+        scrollRevealTimer = 0;
+      }, 80);
+    }, { passive: true });
+
+    // Magnetic behavior removed — felt jittery. Hover state is purely CSS now.
+
+    // Scroll progress bar
+    const progressBar = document.querySelector<HTMLElement>('[data-scroll-progress]');
+    if (progressBar) {
+      let progressRaf = 0;
+      function updateProgress() {
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        const p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+        progressBar!.style.setProperty('--p', String(p));
+        progressRaf = 0;
+      }
+      window.addEventListener('scroll', () => {
+        if (progressRaf) return;
+        progressRaf = requestAnimationFrame(updateProgress);
+      }, { passive: true });
+      updateProgress();
+    }
+  </script>
+</body>
+</html>

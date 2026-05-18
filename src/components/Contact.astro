@@ -1,0 +1,451 @@
+---
+// Contact — editorial premium form + map
+import { prospect } from '../prospect';
+
+const fullAddress = `${prospect.address.street}, ${prospect.address.city}`;
+const fullAddressEncoded = encodeURIComponent(fullAddress);
+---
+
+<section class="contact section" id="kontakt" aria-labelledby="kontakt-naslov">
+  <div class="container">
+    <header class="contact__header">
+      <p class="eyebrow" data-reveal>— Kontakt</p>
+      <h2 id="kontakt-naslov" class="contact__title serif" data-reveal>
+        Zakažite<br /><span class="serif--italic">pregled.</span>
+      </h2>
+      <p class="contact__lede" data-reveal>
+        Prvi pregled i konsultacije su besplatni. Pozovite ili pošaljite poruku — javljamo se istog radnog dana.
+      </p>
+    </header>
+
+    <div class="contact__grid">
+      <aside class="contact__info" data-reveal>
+        <div class="info-block">
+          <p class="info-block__key">Adresa</p>
+          <p class="info-block__val">
+            {prospect.address.street}<br />
+            {prospect.address.district}, {prospect.address.postalCode} {prospect.address.city}
+          </p>
+          <a
+            class="info-block__link"
+            href={`https://www.google.com/maps/dir/?api=1&destination=${fullAddressEncoded}`}
+            target="_blank"
+            rel="noopener"
+          >Put do ordinacije <span>→</span></a>
+        </div>
+
+        <div class="info-block">
+          <p class="info-block__key">Telefon</p>
+          <a class="info-block__phone serif serif--italic" href={`tel:${prospect.phone.tel}`}>{prospect.phone.display}</a>
+        </div>
+
+        <div class="info-block">
+          <p class="info-block__key">Radno vreme</p>
+          <p class="info-block__val info-block__val--lg">
+            Pon&nbsp;–&nbsp;Pet
+          </p>
+          <p class="info-block__val info-block__val--accent">{prospect.hours.weekdays}</p>
+          <p class="info-block__val info-block__val--muted">{prospect.hours.weekendNote}</p>
+        </div>
+      </aside>
+
+      <form class="contact__form" data-contact-form data-reveal novalidate>
+        <div class="field">
+          <input id="ime" name="ime" type="text" required autocomplete="name" placeholder=" " />
+          <label for="ime">Ime i prezime</label>
+          <span class="field__line" aria-hidden="true"></span>
+        </div>
+
+        <div class="field">
+          <input id="telefon" name="telefon" type="tel" required autocomplete="tel" inputmode="tel" placeholder=" " />
+          <label for="telefon">Telefon</label>
+          <span class="field__line" aria-hidden="true"></span>
+        </div>
+
+        <div class="field">
+          <textarea id="poruka" name="poruka" rows="4" required placeholder=" "></textarea>
+          <label for="poruka">Poruka</label>
+          <span class="field__line" aria-hidden="true"></span>
+        </div>
+
+        <button type="submit" class="contact__submit">
+          <span>Pošaljite upit</span>
+          <span class="cta__arrow">→</span>
+        </button>
+
+        <p class="contact__consent">
+          Slanjem upita pristajete na to da Vas kontaktiramo radi zakazivanja termina.
+        </p>
+
+        <p class="contact__status" data-form-status role="status" aria-live="polite"></p>
+      </form>
+    </div>
+
+    <div class="contact__map" data-reveal aria-label="Mapa lokacije ordinacije">
+      <iframe
+        src={`https://www.google.com/maps?q=${fullAddressEncoded}&output=embed`}
+        title={`Mapa — ${prospect.address.street}, ${prospect.address.district}, ${prospect.address.city}`}
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        allowfullscreen
+      ></iframe>
+    </div>
+  </div>
+</section>
+
+<script define:vars={{ phoneDisplay: prospect.phone.display, clinicShort: prospect.clinicShort }}>
+  // Form endpoint — set to a Formspree/Web3Forms URL when ready.
+  const FORM_ENDPOINT = '';
+
+  const form = document.querySelector('[data-contact-form]');
+  if (form) {
+    const statusEl = form.querySelector('[data-form-status]');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalLabel = submitBtn.querySelector('span').textContent || 'Pošaljite upit';
+
+    function setStatus(message, state = '') {
+      statusEl.textContent = message;
+      if (state) statusEl.setAttribute('data-state', state);
+      else statusEl.removeAttribute('data-state');
+    }
+
+    function validate() {
+      const fields = form.querySelectorAll('[required]');
+      for (const f of Array.from(fields)) {
+        if (!f.value.trim()) {
+          f.focus();
+          setStatus('Molimo Vas, popunite sva polja.', 'error');
+          return false;
+        }
+      }
+      return true;
+    }
+
+    async function send(data) {
+      if (!FORM_ENDPOINT) {
+        await new Promise((r) => setTimeout(r, 350));
+        console.info(`[${clinicShort}] contact form:`, data);
+        return { ok: true };
+      }
+      const res = await fetch(FORM_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      return { ok: res.ok };
+    }
+
+    const fallbackMsg = `Nešto nije u redu. Pozovite nas direktno na ${phoneDisplay}.`;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      setStatus('');
+      if (!validate()) return;
+
+      const data = {
+        ime: form.elements.namedItem('ime').value.trim(),
+        telefon: form.elements.namedItem('telefon').value.trim(),
+        poruka: form.elements.namedItem('poruka').value.trim(),
+      };
+
+      submitBtn.disabled = true;
+      submitBtn.querySelector('span').textContent = 'Šaljemo…';
+
+      try {
+        const result = await send(data);
+        if (result.ok) {
+          setStatus('Hvala. Javljamo Vam se istog radnog dana.', 'success');
+          form.reset();
+        } else {
+          setStatus(fallbackMsg, 'error');
+        }
+      } catch {
+        setStatus(fallbackMsg, 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.querySelector('span').textContent = originalLabel;
+      }
+    });
+  }
+</script>
+
+<style>
+  .contact {
+    background: var(--bg);
+    color: var(--ink);
+  }
+
+  .contact__header {
+    max-width: 900px;
+    margin: 0 auto clamp(56px, 8vw, 96px);
+  }
+
+  .contact__header .eyebrow {
+    margin-bottom: 32px;
+    color: var(--ink-2);
+  }
+
+  .contact__title {
+    font-size: var(--t-display);
+    font-weight: 350;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    margin-bottom: 28px;
+    max-width: 14ch;
+  }
+
+  .contact__lede {
+    font-size: var(--t-body-lg);
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 52ch;
+  }
+
+  .contact__grid {
+    display: grid;
+    grid-template-columns: 5fr 7fr;
+    gap: clamp(48px, 7vw, 112px);
+    align-items: start;
+  }
+
+  .contact__info {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    padding-top: 8px;
+  }
+
+  .info-block__key {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 12px;
+  }
+
+  .info-block__val {
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+
+  .info-block__val--lg { font-size: 17px; }
+
+  .info-block__val--accent {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--ink);
+    margin-top: 4px;
+  }
+
+  .info-block__val--muted {
+    font-size: 13px;
+    color: var(--ink-3);
+    margin-top: 6px;
+  }
+
+  .info-block__phone {
+    display: inline-flex;
+    align-items: center;
+    font-size: clamp(32px, 3vw, 44px);
+    font-weight: 400;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    padding: 4px 0;
+    min-height: 44px;
+    transition: color 0.3s var(--ease);
+    font-variation-settings: 'opsz' 144, 'SOFT' 30, 'slnt' -10;
+  }
+
+  .info-block__phone:hover { color: var(--accent); }
+
+  .info-block__link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 6px 0;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+    border-bottom: 1px solid var(--ink-line);
+    transition: border-color 0.3s var(--ease), color 0.3s var(--ease);
+  }
+
+  .info-block__link:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .info-block__link span {
+    display: inline-block;
+    transition: transform 0.4s var(--ease);
+  }
+
+  .info-block__link:hover span { transform: translateX(4px); }
+
+  /* Form */
+  .contact__form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .field {
+    position: relative;
+    padding-top: 28px;
+    margin-bottom: 32px;
+  }
+
+  .field input,
+  .field textarea {
+    display: block;
+    width: 100%;
+    padding: 8px 0 12px;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--ink-line);
+    font-size: 18px;
+    color: var(--ink);
+    transition: border-color 0.4s var(--ease);
+    border-radius: 0;
+    line-height: 1.4;
+  }
+
+  .field textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  .field input:focus,
+  .field textarea:focus {
+    outline: none;
+    border-bottom-color: var(--ink);
+  }
+
+  .field label {
+    position: absolute;
+    left: 0;
+    top: 32px;
+    font-size: 18px;
+    color: var(--ink-3);
+    letter-spacing: -0.005em;
+    transition: transform 0.4s var(--ease), font-size 0.4s var(--ease), color 0.4s var(--ease);
+    pointer-events: none;
+    transform-origin: left top;
+  }
+
+  .field input:focus + label,
+  .field textarea:focus + label,
+  .field input:not(:placeholder-shown) + label,
+  .field textarea:not(:placeholder-shown) + label {
+    transform: translateY(-26px) scale(0.65);
+    color: var(--ink-2);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .field__line {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 1px;
+    background: var(--ink);
+    transform: scaleX(0);
+    transform-origin: left center;
+    transition: transform 0.5s var(--ease);
+  }
+
+  .field input:focus ~ .field__line,
+  .field textarea:focus ~ .field__line {
+    transform: scaleX(1);
+  }
+
+  /* Submit */
+  .contact__submit {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 8px;
+    padding: 18px 32px;
+    background: var(--ink);
+    color: var(--bg);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    border-radius: 999px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    min-height: 56px;
+    transition: transform 0.4s var(--ease);
+    will-change: transform;
+  }
+
+  .contact__submit::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.5s var(--ease);
+    z-index: 0;
+  }
+
+  .contact__submit:hover::before { opacity: 1; }
+
+  .contact__submit > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .contact__submit:disabled { opacity: 0.6; cursor: wait; }
+
+  .contact__consent {
+    margin-top: 18px;
+    font-size: 12px;
+    color: var(--ink-3);
+    max-width: 40ch;
+  }
+
+  .contact__status {
+    margin-top: 18px;
+    font-size: 14px;
+    min-height: 1.4em;
+    color: var(--ink-2);
+  }
+
+  .contact__status[data-state="success"] { color: var(--accent); font-weight: 500; }
+  .contact__status[data-state="error"] { color: #B85A3B; font-weight: 500; }
+
+  /* Map */
+  .contact__map {
+    margin-top: clamp(64px, 9vw, 120px);
+    height: clamp(320px, 50vw, 480px);
+    background: var(--bg-cream);
+    overflow: hidden;
+    border-radius: 2px;
+    box-shadow: 0 20px 50px -30px rgba(15, 28, 42, 0.25);
+  }
+
+  .contact__map iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    filter: grayscale(0.12) contrast(1.02);
+  }
+
+  @media (max-width: 960px) {
+    .contact__grid {
+      grid-template-columns: 1fr;
+      gap: 56px;
+    }
+  }
+</style>

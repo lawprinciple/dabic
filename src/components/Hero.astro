@@ -1,0 +1,558 @@
+---
+// Hero — editorial premium with WebGL shader overlay
+import { prospect } from '../prospect';
+---
+
+<section class="hero" id="vrh">
+  <!-- Background photo: editorial close-up smile -->
+  <div class="hero__bg" aria-hidden="true">
+    <img
+      src="/images/smile.jpg"
+      alt=""
+      fetchpriority="high"
+      decoding="async"
+    />
+  </div>
+
+  <!-- WebGL shader canvas -->
+  <canvas class="hero__shader" data-hero-shader aria-hidden="true"></canvas>
+
+  <!-- Color grade overlay -->
+  <div class="hero__grade" aria-hidden="true"></div>
+
+  <!-- Editorial frame lines (top + bottom) -->
+  <div class="hero__frame">
+    <div class="hero__frame-left">
+      <img
+        class="hero__logo"
+        src="/images/logo.png"
+        alt={`${prospect.clinic} — logo`}
+        width="52"
+        height="52"
+      />
+      <div class="hero__frame-meta" aria-hidden="true">
+        <span>{prospect.hero.frameNumber}</span>
+        <span class="hero__frame-dot"></span>
+        <span>{prospect.address.district} / {prospect.address.city}</span>
+      </div>
+    </div>
+    <div class="hero__frame-meta" aria-hidden="true">
+      <span>{prospect.hero.frameEstYear}</span>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="hero__content container">
+    <p class="hero__eyebrow eyebrow" data-reveal>{prospect.hero.eyebrow}</p>
+
+    <h1 class="hero__title serif">
+      <span class="hero__line"><span data-reveal-mask><span>{prospect.hero.titleLine1}</span></span></span>
+      <span class="hero__line"><span data-reveal-mask><span>{prospect.hero.titleLine2Pre}</span></span>&nbsp;<span data-reveal-mask><span class="serif--italic">{prospect.hero.titleLine2Post}</span></span></span>
+    </h1>
+
+    <div class="hero__meta" data-reveal>
+      <span><span data-hero-counter={prospect.yearsExperience} aria-label={String(prospect.yearsExperience)}>1</span>+ godina iskustva</span>
+      <span class="hero__dot"></span>
+      <span><span data-hero-counter={prospect.patientCount} aria-label={String(prospect.patientCount)}>1</span>+ pacijenata</span>
+      <span class="hero__dot"></span>
+      <span class="hero__location">
+        <svg class="hero__pin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 21.5s7.5-7.13 7.5-12.25a7.5 7.5 0 1 0-15 0C4.5 14.37 12 21.5 12 21.5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <circle cx="12" cy="9.25" r="2.6" stroke="currentColor" stroke-width="1.6"/>
+        </svg>
+        {prospect.address.district}, {prospect.address.city}
+      </span>
+    </div>
+
+    <div class="hero__actions" data-reveal>
+      <a href="#kontakt" class="cta">
+        <span>Zakažite pregled</span>
+        <span class="cta__arrow">→</span>
+      </a>
+      <a href={`tel:${prospect.phone.tel}`} class="hero__phone">
+        <span class="hero__phone-label">Pozovite</span>
+        <span class="hero__phone-num">{prospect.phone.display}</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Scroll cue -->
+  <div class="hero__scroll" aria-hidden="true">
+    <span>Skroluj</span>
+    <span class="hero__scroll-line"></span>
+  </div>
+</section>
+
+<script>
+  // Lazy-init Three.js shader after hero is in view, with reduced-motion + mobile guards.
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const isMobile = window.matchMedia('(max-width: 720px)').matches;
+
+  if (!reducedMotion && !isMobile) {
+    import('three').then(({ Scene, Camera, Mesh, PlaneGeometry, ShaderMaterial, WebGLRenderer, Vector2 }) => {
+      const canvas = document.querySelector<HTMLCanvasElement>('[data-hero-shader]');
+      if (!canvas) return;
+
+      const renderer = new WebGLRenderer({
+        canvas,
+        alpha: true,
+        antialias: false,
+        powerPreference: 'low-power',
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+
+      const scene = new Scene();
+      const camera = new Camera();
+
+      const geometry = new PlaneGeometry(2, 2);
+
+      const uniforms = {
+        u_time: { value: 0 },
+        u_resolution: { value: new Vector2() },
+        u_mouse: { value: new Vector2(0.5, 0.5) },
+        u_intro: { value: 0 },
+      };
+
+      const material = new ShaderMaterial({
+        uniforms,
+        vertexShader: `
+          void main() {
+            gl_Position = vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          precision highp float;
+          uniform float u_time;
+          uniform vec2 u_resolution;
+          uniform vec2 u_mouse;
+          uniform float u_intro;
+
+          // 2D simplex noise (Ashima)
+          vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+          vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+          vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+          float snoise(vec2 v) {
+            const vec4 C = vec4(0.211324865405187, 0.366025403784439,
+                              -0.577350269189626, 0.024390243902439);
+            vec2 i  = floor(v + dot(v, C.yy));
+            vec2 x0 = v -   i + dot(i, C.xx);
+            vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+            vec4 x12 = x0.xyxy + C.xxzz;
+            x12.xy -= i1;
+            i = mod289(i);
+            vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0))
+                  + i.x + vec3(0.0, i1.x, 1.0));
+            vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy),
+                                    dot(x12.zw,x12.zw)), 0.0);
+            m = m*m; m = m*m;
+            vec3 x = 2.0 * fract(p * C.www) - 1.0;
+            vec3 h = abs(x) - 0.5;
+            vec3 ox = floor(x + 0.5);
+            vec3 a0 = x - ox;
+            m *= 1.79284291400159 - 0.85373472095314 * (a0*a0 + h*h);
+            vec3 g;
+            g.x  = a0.x  * x0.x  + h.x  * x0.y;
+            g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+            return 130.0 * dot(m, g);
+          }
+
+          void main() {
+            vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+            vec2 p = uv;
+            p.x *= u_resolution.x / u_resolution.y;
+
+            float t = u_time * 0.06;
+
+            // Layered noise creates a gentle flowing mesh
+            float n1 = snoise(p * 1.2 + vec2(t, t * 0.8));
+            float n2 = snoise(p * 2.4 - vec2(t * 0.9, -t * 0.7)) * 0.5;
+            float n = (n1 + n2) * 0.5;
+
+            // Mouse influence (gentle)
+            vec2 m = u_mouse;
+            m.x *= u_resolution.x / u_resolution.y;
+            float md = 1.0 - smoothstep(0.0, 0.7, distance(p, m));
+            n += md * 0.18;
+
+            // Map noise to a deep navy → cream palette
+            vec3 navy  = vec3(0.058, 0.110, 0.165);
+            vec3 blue  = vec3(0.169, 0.353, 0.549);
+            vec3 cream = vec3(0.945, 0.918, 0.866);
+
+            float k = smoothstep(-0.6, 0.9, n);
+            vec3 col = mix(navy, blue, k);
+            col = mix(col, cream, smoothstep(0.55, 1.05, n));
+
+            // Subtle film grain
+            float g = fract(sin(dot(uv * 1000.0, vec2(12.9898, 78.233))) * 43758.5453);
+            col -= (g - 0.5) * 0.035;
+
+            // Vignette
+            float v = smoothstep(1.1, 0.35, distance(uv, vec2(0.5)));
+            col *= mix(0.65, 1.0, v);
+
+            // Intro fade
+            float alpha = u_intro * 0.62;
+
+            gl_FragColor = vec4(col, alpha);
+          }
+        `,
+        transparent: true,
+        depthWrite: false,
+      });
+
+      const mesh = new Mesh(geometry, material);
+      scene.add(mesh);
+
+      function resize() {
+        const w = canvas.clientWidth;
+        const h = canvas.clientHeight;
+        renderer.setSize(w, h, false);
+        uniforms.u_resolution.value.set(w, h);
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      const mouse = new Vector2(0.5, 0.5);
+      const target = new Vector2(0.5, 0.5);
+      window.addEventListener('mousemove', (e) => {
+        target.x = e.clientX / window.innerWidth;
+        target.y = 1 - e.clientY / window.innerHeight;
+      });
+
+      const start = performance.now();
+      let intro = 0;
+
+      function tick(now: number) {
+        const elapsed = (now - start) / 1000;
+        uniforms.u_time.value = elapsed;
+        mouse.lerp(target, 0.04);
+        uniforms.u_mouse.value.copy(mouse);
+        intro = Math.min(1, intro + 0.012);
+        uniforms.u_intro.value = intro;
+        renderer.render(scene, camera);
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    });
+  }
+</script>
+
+<script>
+  // Counter animation for hero meta stats. Hero is above-the-fold,
+  // so trigger shortly after load to coincide with the reveal.
+  const counters = document.querySelectorAll<HTMLElement>('[data-hero-counter]');
+  if (counters.length) {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function animate(el: HTMLElement, to: number, duration: number) {
+      const start = performance.now();
+      function tick(now: number) {
+        const p = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        const v = Math.round(1 + (to - 1) * eased);
+        el.textContent = v.toLocaleString('sr-Latn');
+        if (p < 1) requestAnimationFrame(tick);
+        else el.textContent = to.toLocaleString('sr-Latn');
+      }
+      requestAnimationFrame(tick);
+    }
+
+    function run() {
+      counters.forEach((el) => {
+        const target = parseInt(el.dataset.heroCounter || '0', 10);
+        if (reducedMotion || target <= 1) {
+          el.textContent = target.toLocaleString('sr-Latn');
+        } else {
+          animate(el, target, target > 100 ? 1800 : 1200);
+        }
+      });
+    }
+
+    // Wait briefly so it lines up with the reveal animation.
+    window.setTimeout(run, 600);
+  }
+</script>
+
+<style>
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0 0 clamp(56px, 8vw, 96px);
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--bg-deep);
+    color: var(--bg);
+    /* iOS Safari fix — force GPU compositing so border-radius (from the
+       global section card rule) clips transformed children like the bg
+       image's Ken Burns animation. Without these, top corners render
+       sharp on iOS even with overflow: hidden. */
+    transform: translateZ(0);
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+  }
+
+  .hero__bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+
+  .hero__bg img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 45%;
+    filter: saturate(1.05) contrast(1.04) brightness(0.92);
+    animation: heroKenBurns 28s var(--ease) infinite alternate;
+  }
+
+  @keyframes heroKenBurns {
+    from { transform: scale(1.04); }
+    to   { transform: scale(1.12) translate(-1%, -2%); }
+  }
+
+  .hero__shader {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    opacity: 0.85;
+  }
+
+  /* Editorial grade — left half stays bright (faces the smile), right side
+     darkens so text on the lower-left stays legible. */
+  .hero__grade {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background:
+      radial-gradient(120% 90% at 25% 105%, rgba(15, 28, 42, 0.78), transparent 55%),
+      linear-gradient(180deg, rgba(15, 28, 42, 0.4) 0%, rgba(15, 28, 42, 0.0) 25%, rgba(15, 28, 42, 0.0) 50%, rgba(15, 28, 42, 0.65) 100%);
+  }
+
+  /* Mobile portrait — the bg photo is much taller than text; the desktop
+     grade leaves a bright midband right where the title/meta/CTA sit.
+     Stronger continuous darken from top-middle to bottom for legibility. */
+  @media (max-width: 720px) {
+    .hero__grade {
+      background:
+        linear-gradient(180deg,
+          rgba(15, 28, 42, 0.55) 0%,
+          rgba(15, 28, 42, 0.20) 25%,
+          rgba(15, 28, 42, 0.55) 60%,
+          rgba(15, 28, 42, 0.85) 100%
+        );
+    }
+  }
+
+  .hero__frame {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 28px 40px;
+    pointer-events: none;
+    border-bottom: 1px solid rgba(241, 235, 221, 0.18);
+  }
+
+  .hero__frame-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(241, 235, 221, 0.78);
+  }
+
+  .hero__frame-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--on-deep-muted);
+  }
+
+  .hero__content {
+    position: relative;
+    z-index: 4;
+  }
+
+  .hero__frame-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .hero__logo {
+    width: clamp(36px, 3.6vw, 52px);
+    height: auto;
+    display: block;
+    flex-shrink: 0;
+  }
+
+  .hero__eyebrow {
+    color: rgba(241, 235, 221, 0.78);
+    margin-bottom: 36px;
+  }
+
+  .hero__title {
+    font-size: var(--t-display-xl);
+    font-weight: 350;
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+    color: var(--on-deep);
+    margin-bottom: 40px;
+    max-width: 14ch;
+    font-variation-settings: 'opsz' 144, 'SOFT' 30;
+  }
+
+  .hero__line {
+    display: block;
+    line-height: 1.02;
+  }
+
+  .hero__line + .hero__line {
+    margin-top: -0.02em;
+  }
+
+  .hero__location {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .hero__pin {
+    width: 14px;
+    height: 14px;
+    color: var(--on-deep);
+    flex-shrink: 0;
+  }
+
+  [data-hero-counter] {
+    font-variant-numeric: tabular-nums;
+    display: inline-block;
+    min-width: 1ch;
+  }
+
+  .hero__meta {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: rgba(241, 235, 221, 0.78);
+    margin-bottom: 48px;
+    padding: 8px 0;
+  }
+
+  .hero__dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--on-deep-muted);
+  }
+
+  .hero__actions {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  .hero .cta {
+    background: var(--on-deep);
+    color: var(--ink);
+  }
+
+  .hero .cta::before {
+    background: var(--bg);
+  }
+
+  .hero__phone {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+    min-height: 44px;
+    padding: 6px 0;
+    text-decoration: none;
+  }
+
+  .hero__phone-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(241, 235, 221, 0.60);
+  }
+
+  .hero__phone-num {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--on-deep);
+    font-variation-settings: 'opsz' 36, 'slnt' -10;
+  }
+
+  .hero__scroll {
+    position: absolute;
+    bottom: 32px;
+    right: 40px;
+    z-index: 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(241, 235, 221, 0.60);
+  }
+
+  .hero__scroll-line {
+    width: 1px;
+    height: 56px;
+    background: linear-gradient(180deg, rgba(241, 235, 221, 0.0) 0%, rgba(241, 235, 221, 0.6) 60%, rgba(241, 235, 221, 0.0) 100%);
+    animation: scrollPulse 2.2s ease-in-out infinite;
+  }
+
+  @keyframes scrollPulse {
+    0% { transform: scaleY(0.4) translateY(-20%); transform-origin: top; }
+    50% { transform: scaleY(1) translateY(0); transform-origin: top; }
+    100% { transform: scaleY(0.4) translateY(20%); transform-origin: bottom; }
+  }
+
+  @media (max-width: 960px) {
+    .hero__frame { padding: 20px 24px; }
+    .hero__scroll { display: none; }
+  }
+
+  @media (max-width: 720px) {
+    .hero {
+      padding-bottom: 48px;
+      padding-top: 92px;
+      justify-content: flex-end;
+    }
+    .hero__title { max-width: 100%; }
+    .hero__actions { gap: 16px; }
+    .hero .cta { width: 100%; max-width: 320px; }
+    .hero__phone { width: 100%; }
+    .hero__eyebrow { margin-bottom: 24px; }
+  }
+</style>

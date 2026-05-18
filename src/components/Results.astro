@@ -1,0 +1,527 @@
+---
+const results = [
+  {
+    src: '/images/before-after-1.jpg',
+    procedure: 'Implantologija',
+    year: '2023.',
+    alt: 'Rezultat implantologije — nedostajući zubi pre i nakon zahvata',
+  },
+  {
+    src: '/images/before-after-3.jpg',
+    procedure: 'Estetska stomatologija',
+    year: '2024.',
+    alt: 'Estetska stomatologija — beljenje i izravnavanje zubnih ivica',
+  },
+  {
+    src: '/images/before-after-4.jpg',
+    procedure: 'Ortodoncija',
+    year: '2022.',
+    alt: 'Ortodoncija — pre i posle korekcije fiksnim aparatom',
+  },
+];
+---
+
+<section class="results section" id="rezultati" aria-labelledby="rezultati-naslov">
+  <div class="container">
+    <header class="results__header">
+      <p class="eyebrow" data-reveal>— Rezultati</p>
+      <h2 id="rezultati-naslov" class="results__title serif" data-reveal>
+        Rad koji govori<br /><span class="serif--italic">za sebe.</span>
+      </h2>
+      <p class="results__lede" data-reveal>
+        Povucite klizač levo ili desno da uporedite stanje pre i posle zahvata. Svi prikazi su iz naše ordinacije, uz pristanak pacijenata.
+      </p>
+    </header>
+
+    <div class="results__grid">
+      {results.map((r, i) => (
+        <article class="result" data-reveal>
+          <div class="result__card" data-slider style={`--split: 50%; --idx: ${i}`}>
+            <div class="result__panel result__panel--before">
+              <img src={r.src} alt={r.alt} loading="lazy" />
+              <span class="result__tag result__tag--before">Pre</span>
+            </div>
+            <div class="result__panel result__panel--after">
+              <img src={r.src} alt="" loading="lazy" aria-hidden="true" />
+              <span class="result__tag result__tag--after">Posle</span>
+            </div>
+
+            <button
+              type="button"
+              class="result__handle"
+              data-slider-handle
+              aria-label={`Klizač pre/posle — ${r.procedure}`}
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="50"
+              role="slider"
+            >
+              <span class="result__handle-bar" aria-hidden="true"></span>
+              <span class="result__handle-knob" aria-hidden="true">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <polyline points="15,6 9,12 15,18" />
+                  <polyline points="9,6 15,12 9,18" transform="translate(8,0)" />
+                </svg>
+              </span>
+            </button>
+          </div>
+
+          <footer class="result__meta">
+            <span class="result__n serif serif--italic">0{i + 1}</span>
+            <div>
+              <p class="result__procedure">{r.procedure}</p>
+              <p class="result__year">{r.year}</p>
+            </div>
+          </footer>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-slider]').forEach((slider) => {
+    const handle = slider.querySelector<HTMLElement>('[data-slider-handle]');
+    if (!handle) return;
+
+    const SNAP_THRESHOLD = 4; // within 4% of 50% → snap home
+    let dragging = false;
+    let rect: DOMRect;
+    let currentSplit = 50;
+    let velocity = 0;
+    let lastMoveX = 0;
+    let lastMoveT = 0;
+    let inertiaRaf = 0;
+
+    function setSplit(pct: number, animated = false) {
+      const clamped = Math.max(0, Math.min(100, pct));
+      currentSplit = clamped;
+      slider.style.setProperty('--split', clamped + '%');
+      handle.setAttribute('aria-valuenow', String(Math.round(clamped)));
+      slider.classList.toggle('is-near-center', Math.abs(clamped - 50) < SNAP_THRESHOLD);
+    }
+
+    function pointerToPct(clientX: number) {
+      const x = clientX - rect.left;
+      return (x / rect.width) * 100;
+    }
+
+    function cancelInertia() {
+      if (inertiaRaf) {
+        cancelAnimationFrame(inertiaRaf);
+        inertiaRaf = 0;
+      }
+    }
+
+    function startInertia() {
+      // Decelerate, then snap to 50% if close.
+      let v = velocity; // pct per ms
+      const friction = 0.92;
+      let last = performance.now();
+      function step(now: number) {
+        const dt = now - last;
+        last = now;
+        v *= Math.pow(friction, dt / 16);
+        const next = currentSplit + v * dt;
+        if (Math.abs(v) < 0.002 || next <= 0 || next >= 100) {
+          // Snap to home if close
+          if (Math.abs(currentSplit - 50) < SNAP_THRESHOLD) {
+            animateTo(50, 380);
+          }
+          inertiaRaf = 0;
+          return;
+        }
+        setSplit(next);
+        inertiaRaf = requestAnimationFrame(step);
+      }
+      inertiaRaf = requestAnimationFrame(step);
+    }
+
+    function animateTo(target: number, duration: number) {
+      cancelInertia();
+      const from = currentSplit;
+      const start = performance.now();
+      function step(now: number) {
+        const t = Math.min(1, (now - start) / duration);
+        const eased = 1 - Math.pow(1 - t, 3);
+        setSplit(from + (target - from) * eased);
+        if (t < 1) inertiaRaf = requestAnimationFrame(step);
+        else inertiaRaf = 0;
+      }
+      inertiaRaf = requestAnimationFrame(step);
+    }
+
+    function onDown(e: PointerEvent) {
+      cancelInertia();
+      dragging = true;
+      rect = slider.getBoundingClientRect();
+      handle.setPointerCapture(e.pointerId);
+      lastMoveX = e.clientX;
+      lastMoveT = performance.now();
+      velocity = 0;
+      setSplit(pointerToPct(e.clientX));
+      slider.classList.add('is-dragging');
+    }
+
+    function onMove(e: PointerEvent) {
+      if (!dragging) return;
+      const now = performance.now();
+      const dt = Math.max(1, now - lastMoveT);
+      const dx = e.clientX - lastMoveX;
+      // velocity in pct-per-ms
+      const widthPx = rect.width;
+      velocity = ((dx / widthPx) * 100) / dt;
+      lastMoveX = e.clientX;
+      lastMoveT = now;
+      setSplit(pointerToPct(e.clientX));
+    }
+
+    function onUp(e: PointerEvent) {
+      if (!dragging) return;
+      dragging = false;
+      handle.releasePointerCapture(e.pointerId);
+      slider.classList.remove('is-dragging');
+
+      // If velocity is meaningful, start inertia; otherwise just snap if close.
+      if (Math.abs(velocity) > 0.005) {
+        startInertia();
+      } else if (Math.abs(currentSplit - 50) < SNAP_THRESHOLD) {
+        animateTo(50, 380);
+      }
+    }
+
+    handle.addEventListener('pointerdown', onDown);
+    handle.addEventListener('pointermove', onMove);
+    handle.addEventListener('pointerup', onUp);
+    handle.addEventListener('pointercancel', onUp);
+
+    // Click anywhere on the card jumps the handle there (animated)
+    slider.addEventListener('pointerdown', (e: PointerEvent) => {
+      if (e.target === handle || handle.contains(e.target as Node)) return;
+      rect = slider.getBoundingClientRect();
+      animateTo(pointerToPct(e.clientX), 520);
+    });
+
+    // Keyboard accessibility
+    handle.addEventListener('keydown', (e: KeyboardEvent) => {
+      cancelInertia();
+      const step = e.shiftKey ? 10 : 4;
+      const current = parseFloat(handle.getAttribute('aria-valuenow') || '50');
+      if (e.key === 'ArrowLeft') { setSplit(current - step); e.preventDefault(); }
+      else if (e.key === 'ArrowRight') { setSplit(current + step); e.preventDefault(); }
+      else if (e.key === 'Home') { animateTo(0, 360); e.preventDefault(); }
+      else if (e.key === 'End') { animateTo(100, 360); e.preventDefault(); }
+      else if (e.key === ' ' || e.key === 'Enter') { animateTo(50, 360); e.preventDefault(); }
+    });
+
+    // Subtle entrance — overshoot from 65 → 35 → 50 to draw the eye to the slider.
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            slider.classList.add('is-revealed');
+            const start = performance.now();
+            const dur = 1600;
+            // Cubic-out from 65 → 35, then settle to 50
+            function step(now: number) {
+              const t = Math.min(1, (now - start) / dur);
+              // Two-phase: overshoot to 35, then settle to 50
+              let value;
+              if (t < 0.55) {
+                const u = t / 0.55;
+                const e = 1 - Math.pow(1 - u, 3);
+                value = 65 + (35 - 65) * e;
+              } else {
+                const u = (t - 0.55) / 0.45;
+                const e = 1 - Math.pow(1 - u, 3);
+                value = 35 + (50 - 35) * e;
+              }
+              setSplit(value);
+              if (t < 1) requestAnimationFrame(step);
+            }
+            requestAnimationFrame(step);
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.3 });
+      io.observe(slider);
+    }
+  });
+</script>
+
+<style>
+  .results {
+    background: var(--bg);
+    color: var(--ink);
+  }
+
+  .results__header {
+    max-width: 880px;
+    margin: 0 auto clamp(48px, 6vw, 96px);
+  }
+
+  .results__header .eyebrow {
+    color: var(--ink-2);
+    margin-bottom: 32px;
+  }
+
+  .results__title {
+    font-size: var(--t-display);
+    font-weight: 350;
+    line-height: 1.04;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    margin-bottom: 28px;
+    max-width: 16ch;
+  }
+
+  .results__lede {
+    font-size: var(--t-body-lg);
+    line-height: 1.5;
+    color: var(--ink-2);
+    max-width: 56ch;
+  }
+
+  .results__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: clamp(24px, 3vw, 48px);
+  }
+
+  .result {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .result__card {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    border-radius: 2px;
+    background: var(--bg-deep);
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: ew-resize;
+    box-shadow: 0 20px 40px -20px rgba(15, 28, 42, 0.3);
+  }
+
+  .result__panel {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  /* Each panel shows half of the source image. The img is scaled to 2x container
+     height so that aligning to top or bottom yields just that half. */
+  .result__panel img {
+    position: absolute;
+    width: auto;
+    min-width: 100%;
+    height: 200%;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: none;
+    pointer-events: none;
+  }
+
+  .result__panel--before img {
+    top: 0;
+  }
+
+  .result__panel--after img {
+    bottom: 0;
+  }
+
+  /* Slider clipping — before fills from left to split, after from split to right */
+  .result__panel--before {
+    clip-path: inset(0 calc(100% - var(--split, 50%)) 0 0);
+  }
+
+  .result__panel--after {
+    clip-path: inset(0 0 0 var(--split, 50%));
+  }
+
+  .result__card.is-dragging .result__panel--before,
+  .result__card.is-dragging .result__panel--after {
+    transition: none;
+  }
+
+  /* Editorial labels */
+  .result__tag {
+    position: absolute;
+    top: 16px;
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: var(--on-deep);
+    padding: 6px 10px;
+    background: rgba(15, 28, 42, 0.55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 999px;
+  }
+
+  .result__tag--before { left: 16px; }
+  .result__tag--after  { right: 16px; }
+
+  /* Handle */
+  .result__handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--split, 50%);
+    width: 44px;
+    transform: translateX(-50%);
+    background: transparent;
+    border: 0;
+    cursor: ew-resize;
+    padding: 0;
+    z-index: 3;
+    color: var(--ink);
+    touch-action: none;
+  }
+
+  .result__handle-bar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    background: var(--on-deep);
+    transform: translateX(-50%);
+    box-shadow: 0 0 16px rgba(15, 28, 42, 0.4);
+    opacity: 0.92;
+    transition: opacity 0.4s var(--ease), background-color 0.3s var(--ease);
+  }
+
+  .result__card.is-near-center .result__handle-bar {
+    background: var(--accent);
+  }
+
+  .result__handle-knob {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--on-deep);
+    color: var(--ink);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 10px 28px rgba(15, 28, 42, 0.35), 0 0 0 0 rgba(241, 235, 221, 0);
+    transition: transform 0.35s var(--ease), background-color 0.3s var(--ease), box-shadow 0.4s var(--ease);
+  }
+
+  .result__handle-knob svg { display: block; }
+
+  /* Idle pulse — subtle breathing to signal interactivity */
+  .result__handle-knob::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 1px solid var(--on-deep);
+    opacity: 0;
+    animation: knobPulse 2.6s ease-out infinite;
+    animation-delay: 1.2s;
+  }
+
+  @keyframes knobPulse {
+    0%   { opacity: 0.55; transform: scale(0.85); }
+    70%  { opacity: 0;    transform: scale(1.4); }
+    100% { opacity: 0;    transform: scale(1.4); }
+  }
+
+  .result__card:hover .result__handle-knob {
+    transform: translate(-50%, -50%) scale(1.08);
+    box-shadow: 0 12px 36px rgba(15, 28, 42, 0.45);
+  }
+
+  .result__card:hover .result__handle-knob::after,
+  .result__card.is-dragging .result__handle-knob::after {
+    animation: none;
+    opacity: 0;
+  }
+
+  .result__card.is-dragging {
+    cursor: grabbing;
+  }
+
+  .result__card.is-dragging .result__handle-knob {
+    background: var(--accent);
+    color: var(--on-deep);
+    transform: translate(-50%, -50%) scale(0.94);
+    box-shadow: 0 6px 20px rgba(43, 90, 140, 0.5);
+  }
+
+  /* Snap-zone glow when near center */
+  .result__card.is-near-center:not(.is-dragging) .result__handle-knob {
+    box-shadow: 0 10px 28px rgba(43, 90, 140, 0.35), 0 0 0 4px rgba(43, 90, 140, 0.18);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .result__handle-knob::after { animation: none; }
+  }
+
+  /* Meta below card */
+  .result__meta {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    padding-top: 8px;
+  }
+
+  .result__n {
+    font-size: 28px;
+    font-weight: 350;
+    color: var(--ink-3);
+    line-height: 1;
+    font-variation-settings: 'opsz' 144, 'SOFT' 30, 'slnt' -10;
+  }
+
+  .result__procedure {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: -0.005em;
+  }
+
+  .result__year {
+    font-size: 12px;
+    color: var(--ink-3);
+    margin-top: 2px;
+    letter-spacing: 0.04em;
+  }
+
+  @media (max-width: 960px) {
+    .results__grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    .results__grid .result:last-child {
+      grid-column: 1 / -1;
+      max-width: 50%;
+      margin: 0 auto;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .results__grid {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+    .results__grid .result:last-child {
+      grid-column: auto;
+      max-width: none;
+      margin: 0;
+    }
+    .result__card { aspect-ratio: 4 / 5; }
+  }
+</style>

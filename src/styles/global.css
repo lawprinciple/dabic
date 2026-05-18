@@ -1,0 +1,321 @@
+/* ==========================================================================
+   Stomatološka ordinacija Veljkov — editorial premium design system
+   ========================================================================== */
+
+:root {
+  /* --- Surfaces --- */
+  --bg: #FAFAF7;            /* warm paper */
+  --bg-alt: #FFFFFF;        /* pure white for contrast blocks */
+  --bg-cream: #F1EBDD;      /* warm cream surface */
+  --bg-sand: #E5DAC2;       /* deeper warm sand — page body that frames cards */
+  --bg-deep: #0E1A26;       /* dark inversion */
+
+  /* --- Ink --- */
+  --ink: #0F1C2A;           /* near-black navy */
+  --ink-2: #3E4F5F;
+  --ink-3: #7A8794;
+  --ink-line: #D8D0C0;      /* warm hairline */
+  --ink-line-cool: #DCE2E8;
+
+  /* --- Accents --- */
+  --accent: #2B5A8C;        /* deeper, more saturated medical blue */
+  --accent-hover: #1F4571;
+  --gold: #C8A046;          /* sparingly — review stars only */
+
+  /* --- Light versions for inversion --- */
+  --on-deep: #F1EBDD;       /* cream on dark */
+  --on-deep-muted: #C5B7A1;
+
+  /* --- Scale --- */
+  --container: 1280px;
+  --container-narrow: 960px;
+
+  /* --- Type scale (clamp-based, scales with viewport) --- */
+  --t-display-xl: clamp(40px, 11vw, 168px);
+  --t-display-lg: clamp(38px, 7.2vw, 112px);
+  --t-display: clamp(32px, 5.4vw, 84px);
+  --t-h1: clamp(30px, 4.4vw, 64px);
+  --t-h2: clamp(26px, 3.2vw, 48px);
+  --t-h3: clamp(20px, 1.8vw, 28px);
+  --t-body-lg: clamp(16px, 1.2vw, 19px);
+  --t-body: 16px;
+  --t-small: 14px;
+  --t-eyebrow: 12px;
+
+  /* --- Motion --- */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- Reset --- */
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; padding: 0; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-feature-settings: 'cv11', 'ss01', 'ss03';
+  font-variation-settings: 'opsz' 14;
+  font-size: var(--t-body);
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--bg-sand);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* --- Section card framing — every major section (including footer)
+   sits as a rounded card on the sand body. --- */
+:where(.hero, .trust, .services, .results, .about, .reviews, .contact, .footer) {
+  margin: clamp(8px, 1vw, 18px);
+  border-radius: clamp(28px, 3.2vw, 48px);
+  overflow: hidden;
+}
+
+img, svg, video, canvas, iframe {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.25s var(--ease);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+input, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/* --- Lenis smooth scroll setup --- */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: clip; }
+
+/* --- Typography utilities --- */
+.serif {
+  font-family: 'Fraunces', 'Times New Roman', Georgia, serif;
+  font-variation-settings: 'opsz' 144, 'SOFT' 30;
+  letter-spacing: -0.025em;
+  line-height: 1.02;
+}
+
+.serif--italic {
+  font-style: italic;
+  font-variation-settings: 'opsz' 144, 'SOFT' 30, 'slnt' -10;
+}
+
+.sans {
+  font-family: 'Inter', sans-serif;
+}
+
+.eyebrow {
+  font-size: var(--t-eyebrow);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+/* --- Container --- */
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+@media (max-width: 720px) {
+  .container { padding: 0 20px; }
+}
+
+/* --- Sections --- */
+.section {
+  padding: clamp(80px, 12vw, 160px) 0;
+  position: relative;
+}
+
+.section--tight { padding: clamp(56px, 8vw, 96px) 0; }
+
+/* --- Link styles --- */
+.link-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: var(--t-body);
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+  position: relative;
+  padding: 6px 0;
+}
+
+.link-arrow::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  background: var(--ink);
+  transform-origin: right center;
+  transition: transform 0.5s var(--ease);
+}
+
+.link-arrow:hover::after {
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.link-arrow .arrow {
+  display: inline-block;
+  transition: transform 0.4s var(--ease);
+}
+
+.link-arrow:hover .arrow {
+  transform: translateX(6px);
+}
+
+/* --- Primary CTA — subtle, elegant. No magnetic, no 360.
+   Smooth color fade + small arrow nudge only. --- */
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 0 28px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  border-radius: 999px;
+  position: relative;
+  overflow: hidden;
+  transition: background-color 0.5s var(--ease);
+}
+
+.cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.5s var(--ease);
+  z-index: 0;
+}
+
+.cta:hover::before { opacity: 1; }
+
+.cta > * {
+  position: relative;
+  z-index: 1;
+}
+
+.cta__arrow {
+  display: inline-block;
+  transition: transform 0.45s var(--ease);
+}
+
+.cta:hover .cta__arrow {
+  transform: translateX(3px);
+}
+
+/* --- Scroll reveal base states --- */
+.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.9s var(--ease), transform 0.9s var(--ease);
+  will-change: opacity, transform;
+}
+
+.js [data-reveal].is-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Line-mask reveal — extra bottom space prevents descender clipping (g, j, q, p, y) */
+.js [data-reveal-mask] {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: 0.18em;
+  margin-bottom: -0.18em;
+  line-height: inherit;
+}
+
+.js [data-reveal-mask] > * {
+  display: inline-block;
+  transform: translateY(110%);
+  transition: transform 1s var(--ease);
+}
+
+.js [data-reveal-mask].is-in > * {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js [data-reveal],
+  .js [data-reveal-mask] > * {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* --- Selection --- */
+::selection {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+/* --- Scroll progress bar --- */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 100;
+  pointer-events: none;
+  background: transparent;
+  mix-blend-mode: difference;
+}
+
+.scroll-progress span {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--on-deep);
+  transform: scaleX(var(--p, 0));
+  transform-origin: left center;
+  transition: transform 0.06s linear;
+  will-change: transform;
+}
